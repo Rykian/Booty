@@ -7,6 +7,7 @@ const DEFAULT_ENV = 'development';
 const validations = {
   NODE_ENV: str({ default: DEFAULT_ENV }),
   DISCORD_TOKEN: str(),
+  DISCORD_CLIENT_ID: str(),
 };
 
 type Validations = typeof validations;
@@ -27,6 +28,7 @@ const FILES = [
 export class EnvService implements Variables {
   NODE_ENV: string;
   DISCORD_TOKEN: string;
+  DISCORD_CLIENT_ID: string;
 
   constructor() {
     this.read();

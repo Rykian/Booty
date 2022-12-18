@@ -13,17 +13,26 @@ import {
 import { ClientService } from 'src/client/service'
 import { EnvService } from 'src/config/env.service'
 import { DefaultQueue, Player, SearchResult, Vulkava } from 'vulkava'
+import { Discordable } from 'src/discord.service'
 
 @Injectable()
-export class MusicService {
-  static permissions = [
+@Discordable({
+  permissions: [
     PermissionFlagsBits.Connect,
     PermissionFlagsBits.Speak,
     PermissionFlagsBits.ViewChannel,
     PermissionFlagsBits.AddReactions,
     PermissionFlagsBits.SendMessages,
-  ]
-  static intents = [GatewayIntentBits.GuildMessageReactions]
+  ],
+  intents: [
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessageReactions,
+  ],
+})
+export class MusicService {
   private vulkava: Vulkava
   private players: { [guildId: string]: { [voiceChannel: string]: Player } } =
     {}
@@ -141,6 +150,7 @@ export class MusicService {
           this.env.MUSIC_DEFAULT_VOLUME
         player.filters.setVolume(amount * 10)
         interaction.editReply(`Volume set to ${amount}`)
+        break
       default:
         console.log('No subcommand?')
     }
@@ -170,7 +180,9 @@ export class MusicService {
           await player.queue.add(track)
         }
       case 'TRACK_LOADED':
+      case 'SEARCH_RESULT':
         const track = res.tracks[0]
+        if (!track) return res
         track.setRequester(user)
         await player.queue.add(track)
     }

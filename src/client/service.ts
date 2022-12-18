@@ -2,12 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { EnvService } from 'src/config/env.service';
 
+const intents = [
+  GatewayIntentBits.Guilds,
+  GatewayIntentBits.GuildVoiceStates,
+  GatewayIntentBits.GuildMessages,
+  GatewayIntentBits.MessageContent,
+  GatewayIntentBits.GuildMessageReactions,
+];
+
 @Injectable()
 export class ClientService extends Client {
   constructor(private env: EnvService) {
-    super({
-      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
-    });
+    super({ intents });
     this.connect();
   }
 

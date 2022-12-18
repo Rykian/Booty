@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as dotenv from 'dotenv';
-import { cleanEnv, str, ValidatorSpec } from 'envalid';
+import { cleanEnv, num, str, ValidatorSpec } from 'envalid';
 
 const DEFAULT_ENV = 'development';
 
@@ -8,6 +8,7 @@ const validations = {
   NODE_ENV: str({ default: DEFAULT_ENV }),
   DISCORD_TOKEN: str(),
   DISCORD_CLIENT_ID: str(),
+  MUSIC_DEFAULT_VOLUME: num({ default: 3 }),
 };
 
 type Validations = typeof validations;
@@ -29,6 +30,7 @@ export class EnvService implements Variables {
   NODE_ENV: string;
   DISCORD_TOKEN: string;
   DISCORD_CLIENT_ID: string;
+  MUSIC_DEFAULT_VOLUME: number;
 
   constructor() {
     this.read();

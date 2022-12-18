@@ -3,54 +3,80 @@ import {
   ChannelType,
   ChatInputCommandInteraction,
   Events,
+  GatewayIntentBits,
+  PermissionFlagsBits,
   Routes,
   SlashCommandBuilder,
-  TextChannel,
+  User,
+  VoiceChannel,
 } from 'discord.js';
 import { ClientService } from 'src/client/service';
 import { EnvService } from 'src/config/env.service';
-import { DefaultQueue, Player, Vulkava } from 'vulkava';
-
-const COMMAND = new SlashCommandBuilder()
-  .setName('music')
-  .setDescription('Plays music')
-  .addSubcommand((command) =>
-    command
-      .setName('add')
-      .setDescription('Add a track to queue')
-      .addStringOption((option) =>
-        option
-          .setRequired(true)
-          .setName('track')
-          .setDescription('YouTube or Spotify track URL, or YouTube search'),
-      ),
-  )
-  .addSubcommand((command) =>
-    command.setName('pause').setDescription('Pause the music'),
-  )
-  .addSubcommand((command) =>
-    command.setName('skip').setDescription('Skip current track'),
-  )
-  .addSubcommand((command) =>
-    command
-      .setName('stop')
-      .setDescription('Stop and disconnect bot from voice channel'),
-  )
-  .addSubcommand((command) =>
-    command.setName('resume').setDescription('Resume play'),
-  )
-  .addSubcommand((command) =>
-    command.setName('shuffle').setDescription('Shuffle the queue'),
-  );
+import { DefaultQueue, Player, SearchResult, Vulkava } from 'vulkava';
 
 @Injectable()
 export class MusicService {
+  static permissions = [
+    PermissionFlagsBits.Connect,
+    PermissionFlagsBits.Speak,
+    PermissionFlagsBits.ViewChannel,
+    PermissionFlagsBits.AddReactions,
+    PermissionFlagsBits.SendMessages,
+  ];
+  static intents = [GatewayIntentBits.GuildMessageReactions];
   private vulkava: Vulkava;
   private players: { [guildId: string]: { [voiceChannel: string]: Player } } =
     {};
 
   constructor(private env: EnvService, private client: ClientService) {
     this.initLavalinkClient();
+    const COMMAND = new SlashCommandBuilder()
+      .setName('music')
+      .setDescription('Plays music')
+      .addSubcommand((command) =>
+        command
+          .setName('add')
+          .setDescription('Add a track to queue')
+          .addStringOption((option) =>
+            option
+              .setRequired(true)
+              .setName('track')
+              .setDescription(
+                'YouTube or Spotify track URL, or YouTube search',
+              ),
+          ),
+      )
+      .addSubcommand((command) =>
+        command.setName('pause').setDescription('Pause the music'),
+      )
+      .addSubcommand((command) =>
+        command.setName('skip').setDescription('Skip current track'),
+      )
+      .addSubcommand((command) =>
+        command
+          .setName('stop')
+          .setDescription('Stop and disconnect bot from voice channel'),
+      )
+      .addSubcommand((command) =>
+        command.setName('resume').setDescription('Resume play'),
+      )
+      .addSubcommand((command) =>
+        command.setName('shuffle').setDescription('Shuffle the queue'),
+      )
+      .addSubcommand((command) =>
+        command
+          .setName('volume')
+          .setDescription('Set the volume')
+          .addIntegerOption((option) =>
+            option
+              .setName('amount')
+              .setDescription(
+                `Volume amount (between 0 to 10). Default: ${this.env.MUSIC_DEFAULT_VOLUME}`,
+              )
+              .setMinValue(0)
+              .setMaxValue(10),
+          ),
+      );
     const commands = [COMMAND];
 
     this.client.rest
@@ -62,8 +88,8 @@ export class MusicService {
     client.on(Events.InteractionCreate, async (interaction) => {
       if (!interaction.isChatInputCommand()) return;
 
+      await interaction.deferReply({ ephemeral: true });
       this.joinUserVoiceChannel(interaction);
-      interaction.reply({ content: 'Aknowledged', ephemeral: true });
     });
   }
 
@@ -109,6 +135,12 @@ export class MusicService {
       case 'shuffle':
         (player.queue as DefaultQueue).shuffle();
         break;
+      case 'volume':
+        const amount =
+          (interaction.options.get('amount')?.value as number | undefined) ||
+          this.env.MUSIC_DEFAULT_VOLUME;
+        player.filters.setVolume(amount * 10);
+        interaction.editReply(`Volume set to ${amount}`);
       default:
         console.log('No subcommand?');
     }
@@ -122,32 +154,42 @@ export class MusicService {
   async addTrack(interaction: ChatInputCommandInteraction, player: Player) {
     const track = interaction.options.getString('track');
 
-    const res = await this.vulkava.search(track);
-
-    if (res.loadType === 'LOAD_FAILED') {
-      return interaction.editReply(
-        `:x: Load failed. Error: ${res.exception.message}`,
-      );
-    } else if (res.loadType === 'NO_MATCHES') {
-      return interaction.editReply(':x: No matches!');
-    }
-
-    if (res.loadType === 'PLAYLIST_LOADED') {
-      for (const track of res.tracks) {
-        track.setRequester(interaction.user);
-        player.queue.add(track);
-      }
-
-      interaction.editReply(`Playlist \`${res.playlistInfo.name}\` loaded!`);
-    } else {
-      const track = res.tracks[0];
-      track.setRequester(interaction.user);
-
-      player.queue.add(track);
-      interaction.editReply(`Queued \`${track.title}\``);
-    }
+    const result = await this.searchAndQueue(interaction.user, player, track);
+    interaction.editReply(this.loadTypeToString(result));
 
     if (!player.playing) player.play();
+  }
+
+  async searchAndQueue(user: User, player: Player, search: string) {
+    const res = await this.vulkava.search(search);
+
+    switch (res.loadType) {
+      case 'PLAYLIST_LOADED':
+        for (const track of res.tracks) {
+          track.setRequester(user);
+          await player.queue.add(track);
+        }
+      case 'TRACK_LOADED':
+        const track = res.tracks[0];
+        track.setRequester(user);
+        await player.queue.add(track);
+    }
+
+    return res;
+  }
+
+  loadTypeToString(res: SearchResult) {
+    switch (res.loadType) {
+      case 'LOAD_FAILED':
+        return `:x: Load failed: ${res.exception.message}`;
+      case 'NO_MATCHES':
+        return ':x: No matches';
+      case 'PLAYLIST_LOADED':
+        return `Playlist \`${res.playlistInfo.name}\` loaded!`;
+      default:
+        const track = res.tracks[0];
+        return `Queued \`${track.title}\``;
+    }
   }
 
   createOrGetPlayer(
@@ -170,6 +212,22 @@ export class MusicService {
     this.players[guildId][voiceChannelId] = newPlayer;
 
     newPlayer.connect();
+    newPlayer.filters.setVolume(this.env.MUSIC_DEFAULT_VOLUME * 10);
+    this.client.on(Events.MessageCreate, async (message) => {
+      if (message.author.id == this.client.user.id) return;
+      if (message.channelId != textChannelId) return;
+      if (!message.content.match('^https://(open.spotify.com|(www.)youtu)'))
+        return;
+
+      const response = await this.searchAndQueue(
+        message.author,
+        newPlayer,
+        message.content,
+      );
+      if (['NO_MATCHES', 'LOAD_FAILED'].includes(response.loadType))
+        message.react('❌');
+      else message.react('🎵');
+    });
     return newPlayer;
   }
 
@@ -200,8 +258,8 @@ export class MusicService {
       if (!player.textChannelId) return;
       const guild = await this.client.guilds.fetch(player.guildId);
       const channel = (await guild.channels.fetch(
-        player.textChannelId,
-      )) as TextChannel;
+        player.voiceChannelId,
+      )) as VoiceChannel;
       channel.send(`Playing ${track.title}`);
     });
 

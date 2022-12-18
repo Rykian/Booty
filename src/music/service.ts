@@ -5,7 +5,6 @@ import {
   Events,
   GatewayIntentBits,
   PermissionFlagsBits,
-  Routes,
   SlashCommandBuilder,
   User,
   VoiceChannel,
@@ -31,15 +30,8 @@ import { Discordable } from 'src/discord.service'
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMessageReactions,
   ],
-})
-export class MusicService {
-  private vulkava: Vulkava
-  private players: { [guildId: string]: { [voiceChannel: string]: Player } } =
-    {}
-
-  constructor(private env: EnvService, private client: ClientService) {
-    this.initLavalinkClient()
-    const COMMAND = new SlashCommandBuilder()
+  commands: [
+    new SlashCommandBuilder()
       .setName('music')
       .setDescription('Plays music')
       .addSubcommand((command) =>
@@ -80,19 +72,21 @@ export class MusicService {
             option
               .setName('amount')
               .setDescription(
-                `Volume amount (between 0 to 10). Default: ${this.env.MUSIC_DEFAULT_VOLUME}`,
+                `Volume amount (between 0 to 10). Default: ${process.env.MUSIC_DEFAULT_VOLUME}`,
               )
               .setMinValue(0)
               .setMaxValue(10),
           ),
-      )
-    const commands = [COMMAND]
+      ),
+  ],
+})
+export class MusicService {
+  private vulkava: Vulkava
+  private players: { [guildId: string]: { [voiceChannel: string]: Player } } =
+    {}
 
-    this.client.rest
-      .put(Routes.applicationCommands(env.DISCORD_CLIENT_ID), {
-        body: commands.map((command) => command.toJSON()),
-      })
-      .then(() => console.log('Commands updated!'))
+  constructor(private env: EnvService, private client: ClientService) {
+    this.initLavalinkClient()
 
     client.on(Events.InteractionCreate, async (interaction) => {
       if (!interaction.isChatInputCommand()) return

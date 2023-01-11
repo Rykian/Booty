@@ -1,0 +1,20 @@
+{
+  "development": {
+    "dialect": "sqlite",
+    "storage": "db.sqlite",
+    "autoLoadModels": true,
+    "synchronize": true
+  },
+  "production": {
+    "dialect": "sqlite",
+    "storage": "db.sqlite",
+    "autoLoadModels": true,
+    "synchronize": true
+  },
+  "test": {
+    "dialect": "sqlite",
+    "storage": "db.sqlite",
+    "autoLoadModels": true,
+    "synchronize": true
+  }
+}

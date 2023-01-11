@@ -9,6 +9,7 @@ const validations = {
   DISCORD_TOKEN: str(),
   DISCORD_CLIENT_ID: str(),
   MUSIC_DEFAULT_VOLUME: num({ default: 3 }),
+  REDIS_URL: str({ default: 'redis://localhost/' }),
 }
 
 type Validations = typeof validations
@@ -31,6 +32,7 @@ export class EnvService implements Variables {
   DISCORD_TOKEN: string
   DISCORD_CLIENT_ID: string
   MUSIC_DEFAULT_VOLUME: number
+  REDIS_URL: string
 
   constructor() {
     this.read()

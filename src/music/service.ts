@@ -90,6 +90,7 @@ export class MusicService {
 
     client.on(Events.InteractionCreate, async (interaction) => {
       if (!interaction.isChatInputCommand()) return
+      if (interaction.commandName != 'music') return
 
       await interaction.deferReply({ ephemeral: true })
       this.joinUserVoiceChannel(interaction)

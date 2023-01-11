@@ -5,3 +5,7 @@ services:
       - 2333:2333
     volumes:
       - ./lavalink.yaml:/opt/Lavalink/application.yml:ro
+  redis:
+    image: redis/redis-stack-server:latest
+    ports:
+      - 6379:6379

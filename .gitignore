@@ -39,3 +39,6 @@ lerna-debug.log*
 
 # Database
 db.sqlite*
+
+# Yarn
+/.yarn

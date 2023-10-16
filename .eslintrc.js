@@ -1,3 +1,4 @@
+/* eslint-env node */
 module.exports = {
   parser: '@typescript-eslint/parser',
   parserOptions: {
@@ -5,10 +6,10 @@ module.exports = {
     tsconfigRootDir: __dirname,
     sourceType: 'module',
   },
-  plugins: ['@typescript-eslint/eslint-plugin'],
+  plugins: ['@typescript-eslint'],
   extends: [
     'plugin:@typescript-eslint/recommended',
-    'plugin:prettier/recommended',
+    'eslint:recommended',
   ],
   root: true,
   env: {

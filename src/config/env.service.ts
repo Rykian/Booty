@@ -10,6 +10,9 @@ const validations = {
   DISCORD_CLIENT_ID: str(),
   MUSIC_DEFAULT_VOLUME: num({ default: 3 }),
   REDIS_URL: str({ default: 'redis://localhost/' }),
+  LAVALINK_HOST: str({ default: 'localhost' }),
+  LAVALINK_PORT: num({ default: 2333 }),
+  LAVALINK_PASSWORD: str({ default: 'youshallnotpass' }),
 }
 
 type Validations = typeof validations
@@ -33,6 +36,9 @@ export class EnvService implements Variables {
   DISCORD_CLIENT_ID: string
   MUSIC_DEFAULT_VOLUME: number
   REDIS_URL: string
+  LAVALINK_HOST: string
+  LAVALINK_PORT: number
+  LAVALINK_PASSWORD: string
 
   constructor() {
     this.read()

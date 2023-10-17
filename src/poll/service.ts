@@ -51,7 +51,7 @@ export class PollService {
       if (interaction.commandName != 'poll') return
 
       switch (interaction.options.getSubcommand()) {
-        case 'create':
+        case 'create': {
           const modal = new ModalBuilder()
             .setCustomId('poll')
             .setTitle('New poll')
@@ -77,6 +77,7 @@ export class PollService {
 
           await interaction.showModal(modal)
           break
+        }
       }
     })
 

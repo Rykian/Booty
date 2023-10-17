@@ -85,7 +85,10 @@ export class MusicService {
   private players: { [guildId: string]: { [voiceChannel: string]: Player } } =
     {}
 
-  constructor(private env: EnvService, private client: ClientService) {
+  constructor(
+    private env: EnvService,
+    private client: ClientService,
+  ) {
     this.initLavalinkClient()
 
     client.on(Events.InteractionCreate, async (interaction) => {
@@ -137,15 +140,16 @@ export class MusicService {
         if (!player.play) player.play()
         break
       case 'shuffle':
-        ;(player.queue as DefaultQueue).shuffle()
+        (player.queue as DefaultQueue).shuffle()
         break
-      case 'volume':
+      case 'volume': {
         const amount =
           (interaction.options.get('amount')?.value as number | undefined) ||
           this.env.MUSIC_DEFAULT_VOLUME
         player.filters.setVolume(amount * 10)
         interaction.editReply(`Volume set to ${amount}`)
         break
+      }
       default:
         console.log('No subcommand?')
     }
@@ -174,12 +178,14 @@ export class MusicService {
           track.setRequester(user)
           await player.queue.add(track)
         }
+        break
       case 'TRACK_LOADED':
-      case 'SEARCH_RESULT':
+      case 'SEARCH_RESULT': {
         const track = res.tracks[0]
         if (!track) return res
         track.setRequester(user)
         await player.queue.add(track)
+      }
     }
 
     return res
@@ -193,9 +199,10 @@ export class MusicService {
         return ':x: No matches'
       case 'PLAYLIST_LOADED':
         return `Playlist \`${res.playlistInfo.name}\` loaded!`
-      default:
+      default: {
         const track = res.tracks[0]
         return `Queued \`${track.title}\``
+      }
     }
   }
 

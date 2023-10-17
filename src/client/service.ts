@@ -50,7 +50,7 @@ export class ClientService extends Client {
   }
 
   async handleCommandPush() {
-    const commandFile = 'node_modules/commands.json'
+    const commandFile = '.commands.json'
     const commandsToString = JSON.stringify(
       commands.map((command) => command.toJSON()),
     )

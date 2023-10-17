@@ -242,10 +242,10 @@ export class MusicService {
     this.vulkava = new Vulkava({
       nodes: [
         {
-          id: 'localhost',
-          hostname: 'localhost',
-          port: 2333,
-          password: 'youshallnotpass',
+          id: `${this.env.LAVALINK_HOST}:${this.env.LAVALINK_PORT}`,
+          hostname: this.env.LAVALINK_HOST,
+          port: this.env.LAVALINK_PORT,
+          password: this.env.LAVALINK_PASSWORD,
         },
       ],
       sendWS: (guildId, payload) =>

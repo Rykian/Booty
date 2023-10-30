@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { Logger, Module } from '@nestjs/common'
 import { SequelizeModule } from '@nestjs/sequelize'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
@@ -15,11 +15,14 @@ const ENV = (process.env.NODE_ENV || 'development') as
   | 'test'
   | 'production'
 
-console.log({ dbConfig, ENV })
+const SQLLogger = new Logger('SQL')
 
 @Module({
   imports: [
-    SequelizeModule.forRoot(dbConfig[ENV] as Partial<SequelizeOptions>),
+    SequelizeModule.forRoot({
+      ...dbConfig[ENV],
+      logging: (sql) => SQLLogger.debug(sql),
+    } as Partial<SequelizeOptions>),
     ClientModule,
     MusicModule,
     PollModule,

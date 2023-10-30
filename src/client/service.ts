@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import {
   Client,
   Events,
@@ -22,10 +22,12 @@ import {
   intents: [GatewayIntentBits.Guilds],
 })
 export class ClientService extends Client {
+  private logger = new Logger(ClientService.name)
+
   constructor(private env: EnvService) {
     super({ intents: [...intents] })
     const arrayPermissions = Array.from(permissions)
-    console.log(
+    this.logger.log(
       `Permissions needed (${new PermissionsBitField(
         arrayPermissions,
       ).bitfield.toString()}):`,
@@ -44,7 +46,7 @@ export class ClientService extends Client {
 
   async connect() {
     this.once(Events.ClientReady, (c) => {
-      console.log(`Ready! Logged in as ${c.user.tag}`)
+      this.logger.log(`Ready! Logged in as ${c.user.tag}`)
     })
     await this.login(this.env.DISCORD_TOKEN)
   }
@@ -56,7 +58,7 @@ export class ClientService extends Client {
     )
     if (existsSync(commandFile)) {
       if ((await readFile(commandFile)).toString() == commandsToString) {
-        console.log('Commands seems up-to-date!')
+        this.logger.debug('Commands seems up-to-date!')
         return
       }
     }
@@ -66,7 +68,7 @@ export class ClientService extends Client {
         body: commands.map((command) => command.toJSON()),
       },
     )
-    console.log('Commands updated!')
+    this.logger.debug('Commands updated!')
     await writeFile(commandFile, commandsToString)
   }
 }

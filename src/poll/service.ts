@@ -94,7 +94,6 @@ export class PollService {
         title,
       })
       poll.choices = options.map((title) => new Choice({ title }))
-      console.log(poll.choices)
       const embed = await this.generateEmbed(poll)
 
       const message = await interaction.reply({
@@ -121,7 +120,7 @@ export class PollService {
       await interaction.editReply({
         components: rows,
       })
-      console.log('Saving...')
+
       const { id: pollId } = await poll.save()
       await Promise.all(
         poll.choices.map((choice) => {
@@ -129,7 +128,6 @@ export class PollService {
           return choice.save()
         }),
       )
-      console.log('Saved.')
     })
 
     client.on(Events.InteractionCreate, async (interaction) => {
@@ -150,14 +148,9 @@ export class PollService {
 
       const choice = poll.choices.find((choice) => choice.title == choiceTitle)
 
-      console.log({ answers: choice.answers })
-      const existingAnswer = choice.answers?.find((answer) => {
-        console.log({
-          'answer.userId': answer.userId,
-          'interaction.user.id': interaction.user.id,
-        })
-        return answer.userId == interaction.user.id
-      })
+      const existingAnswer = choice.answers?.find(
+        (answer) => answer.userId == interaction.user.id,
+      )
 
       if (existingAnswer) {
         await existingAnswer.destroy()
@@ -182,7 +175,6 @@ export class PollService {
 
   async generateEmbed(poll: Poll) {
     const fields = poll.choices.map((choice) => {
-      console.log({ choice }, choice.answers)
       const users = choice.answers?.map((answer) => `<@${answer.userId}>`) || []
 
       return {

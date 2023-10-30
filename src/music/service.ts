@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import {
   ChannelType,
   ChatInputCommandInteraction,
@@ -81,6 +81,7 @@ import { Discordable } from 'src/discord.service'
   ],
 })
 export class MusicService {
+  private logger = new Logger(MusicService.name)
   private vulkava: Vulkava
   private players: { [guildId: string]: { [voiceChannel: string]: Player } } =
     {}
@@ -151,7 +152,7 @@ export class MusicService {
         break
       }
       default:
-        console.log('No subcommand?')
+        this.logger.log('No subcommand?')
     }
   }
 
@@ -214,8 +215,6 @@ export class MusicService {
     const player = this.players[guildId]?.[voiceChannelId]
     if (player) return player
 
-    console.log({ guildId, voiceChannelId, textChannelId })
-
     const newPlayer = this.vulkava.createPlayer({
       guildId,
       voiceChannelId,
@@ -260,7 +259,7 @@ export class MusicService {
     })
 
     this.vulkava.on('error', (node, err) => {
-      console.error(`[Vulkava] Error on node ${node.identifier}`, err.message)
+      this.logger.error(`[Vulkava] Error on node ${node.identifier}`, err.message)
     })
 
     this.client.on('ready', () => {

@@ -14,12 +14,11 @@ import {
 } from 'discord.js'
 import { ClientService } from 'src/client/service'
 import { Discordable } from 'src/discord.service'
-import { RedisService } from 'src/redis/service'
 import * as R from 'remeda'
 import { Poll } from './poll.entity'
 import { Choice } from './choices.entity'
-import { Sequelize } from 'sequelize-typescript'
 import { Answer } from './answer.entity'
+import { FindOptions } from 'sequelize'
 
 @Injectable()
 @Discordable({
@@ -42,9 +41,7 @@ import { Answer } from './answer.entity'
 })
 export class PollService {
   constructor(
-    private client: ClientService,
-    private redis: RedisService,
-    private sequelize: Sequelize,
+    private client: ClientService, // private sequelize: Sequelize,
   ) {
     client.on(Events.InteractionCreate, async (interaction) => {
       if (!interaction.isChatInputCommand()) return
@@ -52,29 +49,7 @@ export class PollService {
 
       switch (interaction.options.getSubcommand()) {
         case 'create': {
-          const modal = new ModalBuilder()
-            .setCustomId('poll')
-            .setTitle('New poll')
-
-          const title = new TextInputBuilder()
-            .setCustomId('title')
-            .setLabel('Title')
-            .setStyle(TextInputStyle.Short)
-
-          const firstRow =
-            new ActionRowBuilder<TextInputBuilder>().addComponents(title)
-          modal.addComponents(firstRow)
-
-          modal.addComponents(
-            new ActionRowBuilder<TextInputBuilder>().addComponents(
-              new TextInputBuilder()
-                .setCustomId(`options`)
-                .setLabel(`Options`)
-                .setPlaceholder('1 per line')
-                .setStyle(TextInputStyle.Paragraph),
-            ),
-          )
-
+          const modal = this.createPollModal()
           await interaction.showModal(modal)
           break
         }
@@ -85,25 +60,18 @@ export class PollService {
       if (!interaction.isModalSubmit()) return
       if (interaction.customId != 'poll') return
 
+      const message = await interaction.reply('Creating poll...')
       const title = interaction.fields.getTextInputValue('title')
       const options: string[] = interaction.fields
         .getTextInputValue('options')
         .split('\n')
 
-      const poll = new Poll({
-        title,
-      })
-      poll.choices = options.map((title) => new Choice({ title }))
+      const poll = await this.createPoll(message.id, title, options)
       const embed = await this.generateEmbed(poll)
 
-      const message = await interaction.reply({
-        embeds: [embed],
-      })
-
-      poll.id = message.id
-
       const rows = R.pipe(
-        options,
+        poll.choices,
+        R.map((choice) => choice.title),
         R.chunk(5),
         R.map((chunk) =>
           new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -118,16 +86,10 @@ export class PollService {
       )
 
       await interaction.editReply({
+        content: '',
+        embeds: [embed],
         components: rows,
       })
-
-      const { id: pollId } = await poll.save()
-      await Promise.all(
-        poll.choices.map((choice) => {
-          choice.pollId = pollId
-          return choice.save()
-        }),
-      )
     })
 
     client.on(Events.InteractionCreate, async (interaction) => {
@@ -141,30 +103,11 @@ export class PollService {
       const messageId = match.groups['messageId']
       const choiceTitle = match.groups['answer']
 
-      const poll = await Poll.findOne({
-        where: { id: messageId },
-        include: [{ all: true, nested: true }],
-      })
-
-      const choice = poll.choices.find((choice) => choice.title == choiceTitle)
-
-      const existingAnswer = choice.answers?.find(
-        (answer) => answer.userId == interaction.user.id,
+      const updatedPoll = await this.vote(
+        messageId,
+        choiceTitle,
+        interaction.user.id,
       )
-
-      if (existingAnswer) {
-        await existingAnswer.destroy()
-      } else {
-        await Answer.create({
-          pollId: messageId,
-          choiceId: choice.id,
-          userId: interaction.user.id,
-        })
-      }
-      const updatedPoll = await Poll.findOne({
-        where: { id: messageId },
-        include: [{ all: true, nested: true }],
-      })
 
       interaction.reply({ ephemeral: true, content: 'You toggled!' })
       await interaction.message.edit({
@@ -187,5 +130,67 @@ export class PollService {
     const embed = new EmbedBuilder().setTitle(poll.title).addFields(fields)
 
     return embed
+  }
+
+  createPollModal() {
+    const modal = new ModalBuilder().setCustomId('poll').setTitle('New poll')
+
+    const title = new TextInputBuilder()
+      .setCustomId('title')
+      .setLabel('Title')
+      .setStyle(TextInputStyle.Short)
+
+    const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+      title,
+    )
+    modal.addComponents(firstRow)
+
+    modal.addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(
+        new TextInputBuilder()
+          .setCustomId(`options`)
+          .setLabel(`Options`)
+          .setPlaceholder('1 per line')
+          .setStyle(TextInputStyle.Paragraph),
+      ),
+    )
+    return modal
+  }
+
+  async createPoll(id: string, title: string, options: string[]) {
+    const poll = await Poll.create({ id, title })
+    poll.choices = await R.pipe(
+      options,
+      R.map((title) => Choice.create({ title, pollId: poll.id })),
+      (x) => Promise.all(x),
+    )
+
+    return poll
+  }
+
+  async vote(messageId: string, answer: string, userId: string) {
+    const query: FindOptions<Poll> = {
+      where: { id: messageId },
+      include: [{ all: true, nested: true }],
+    }
+    const poll = await Poll.findOne(query)
+    const choice = poll.choices.find((choice) => choice.title == answer)
+
+    const existingAnswer = choice.answers?.find(
+      (answer) => answer.userId == userId,
+    )
+
+    if (existingAnswer) {
+      await existingAnswer.destroy()
+    } else {
+      await Answer.create({
+        pollId: messageId,
+        choiceId: choice.id,
+        userId,
+      })
+    }
+
+    // TODO: why poll.reload() doesn't work?
+    return Poll.findOne(query)
   }
 }

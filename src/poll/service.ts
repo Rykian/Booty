@@ -13,7 +13,7 @@ import {
   TextInputStyle,
 } from 'discord.js'
 import { ClientService } from 'src/client/service'
-import { Discordable } from 'src/discord.service'
+import { Discordable } from 'src/discordable.util'
 import * as R from 'remeda'
 import { Poll } from './poll.entity'
 import { Choice } from './choices.entity'

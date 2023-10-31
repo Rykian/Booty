@@ -11,7 +11,7 @@ import {
   VoiceState,
 } from 'discord.js'
 import { ClientService } from 'src/client/service'
-import { Discordable } from 'src/discord.service'
+import { Discordable } from 'src/discordable.util'
 import { SessionEntity } from './session.entity'
 import { SessionService } from './session.service'
 import { unlink } from 'fs/promises'

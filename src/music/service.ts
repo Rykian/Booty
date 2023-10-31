@@ -12,7 +12,7 @@ import {
 import { ClientService } from 'src/client/service'
 import { EnvService } from 'src/config/env.service'
 import { DefaultQueue, Player, SearchResult, Vulkava } from 'vulkava'
-import { Discordable } from 'src/discord.service'
+import { Discordable } from 'src/discordable.util'
 
 @Injectable()
 @Discordable({

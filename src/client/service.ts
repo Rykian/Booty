@@ -15,7 +15,7 @@ import {
   Discordable,
   intents,
   permissions,
-} from 'src/discord.service'
+} from 'src/discordable.util'
 
 @Injectable()
 @Discordable({

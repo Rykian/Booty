@@ -7,8 +7,7 @@ import { ClientService } from 'src/client/service'
 import { createMock } from '@golevelup/ts-jest'
 import { SequelizeModule } from '@nestjs/sequelize'
 import { Answer } from './answer.entity'
-import { Logger } from '@nestjs/common'
-const SQLLogger = new Logger('SQL')
+import { sequelizeForRoot } from 'src/database.util'
 
 describe('PollService', () => {
   let service: PollService
@@ -16,13 +15,7 @@ describe('PollService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
-        SequelizeModule.forRoot({
-          dialect: 'sqlite',
-          storage: ':memory:',
-          autoLoadModels: true,
-          synchronize: true,
-          logging: SQLLogger.debug.bind(SQLLogger),
-        }),
+        sequelizeForRoot(),
         SequelizeModule.forFeature([Poll, Choice, Answer]),
       ],
       providers: [

@@ -13,7 +13,7 @@
   },
   "test": {
     "dialect": "sqlite",
-    "storage": "db.sqlite",
+    "storage": ":memory:",
     "autoLoadModels": true,
     "synchronize": true
   }

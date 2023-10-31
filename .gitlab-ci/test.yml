@@ -1,0 +1,32 @@
+test:
+  stage: test
+  image: '${CI_TEMPLATE_REGISTRY_HOST}/gitlab-org/cluster-integration/auto-build-image:${AUTO_BUILD_IMAGE_VERSION}'
+  variables:
+    DOCKER_TLS_CERTDIR: ''
+  services:
+    - name: 'docker:20.10.12-dind'
+      command: ['--tls=false', '--host=tcp://0.0.0.0:2375']
+  script:
+    - |
+      if [[ -z "$CI_COMMIT_TAG" ]]; then
+        export CI_APPLICATION_REPOSITORY=${CI_APPLICATION_REPOSITORY:-$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG}
+        export CI_APPLICATION_TAG=${CI_APPLICATION_TAG:-$CI_COMMIT_SHA}
+      else
+        export CI_APPLICATION_REPOSITORY=${CI_APPLICATION_REPOSITORY:-$CI_REGISTRY_IMAGE}
+        export CI_APPLICATION_TAG=${CI_APPLICATION_TAG:-$CI_COMMIT_TAG}
+      fi
+    - docker run --name ${CI_COMMIT_SHA} ${CI_APPLICATION_REPOSITORY}:${CI_APPLICATION_TAG} bash -c "yarn install && yarn test:cov"
+    - docker cp ${CI_COMMIT_SHA}:/usr/src/app/coverage/cobertura-coverage.xml ./cobertura-coverage.xml
+    - docker cp ${CI_COMMIT_SHA}:/usr/src/app/coverage/junit.xml ./junit.xml
+    - docker rm -vf ${CI_COMMIT_SHA}
+  rules:
+    - if: '$TEST_DISABLED'
+      when: never
+    - if: '$CI_COMMIT_TAG || $CI_COMMIT_BRANCH'
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: cobertura-coverage.xml
+      junit: junit.xml

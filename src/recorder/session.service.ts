@@ -31,8 +31,8 @@ export class SessionService {
   private async generateUserTrack(session: SessionEntity, userId: string) {
     const user = await this.client.users.fetch(userId)
     this.logger.log(`Generating track for ${user.globalName}`)
-    const directory = `${cwd()}/tmp/${session.voiceChannel.id}-${
-      session.voiceChannel.name
+    const directory = `${cwd()}/tmp/${session.channel.id}-${
+      session.channel.name
     }/${this.date(session.start)}`
     await mkdir(directory, { recursive: true })
     const filename = `${directory}/${user.globalName}.ogg`

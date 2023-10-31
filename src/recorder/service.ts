@@ -1,4 +1,4 @@
-import { VoiceConnection, joinVoiceChannel } from '@discordjs/voice'
+import { joinVoiceChannel } from '@discordjs/voice'
 import { Injectable, Logger } from '@nestjs/common'
 import {
   ChannelType,
@@ -33,11 +33,20 @@ import { unlink } from 'fs/promises'
   commands: [
     new SlashCommandBuilder()
       .setName('record')
-      .setDescription("Record conversation if you're on a voice channel"),
+      .setDescription('Conversation recorder')
+      .addSubcommand((c) =>
+        c
+          .setName('start')
+          .setDescription("Record conversation if you're on a voice channel"),
+      )
+      .addSubcommand((c) =>
+        c.setName('stop').setDescription('Stop current recording session'),
+      ),
   ],
 })
 export class RecorderService {
   private logger = new Logger(RecorderService.name)
+  private sessions: Map<string, SessionEntity> = new Map()
 
   constructor(
     private client: ClientService,
@@ -47,6 +56,7 @@ export class RecorderService {
     client.on(Events.InteractionCreate, async (interaction) => {
       if (!interaction.isChatInputCommand()) return
       if (interaction.commandName != 'record') return
+      const subCommand = interaction.options.getSubcommand()
 
       await interaction.deferReply()
 
@@ -62,8 +72,20 @@ export class RecorderService {
         interaction.editReply(
           'You must join a voice channel before using this command',
         )
-      } else {
-        await this.startRecording(interaction, channel)
+        return
+      }
+      switch (subCommand) {
+        case 'start':
+          await this.startRecording(interaction, channel)
+          break
+        case 'stop': {
+          const session = this.sessions.get(channel.id)
+          if (!session) {
+            interaction.editReply('No recording session found')
+            return
+          }
+          await this.finalizeSession(interaction, session)
+        }
       }
     })
   }
@@ -83,7 +105,8 @@ export class RecorderService {
       adapterCreator: voiceChannel.guild.voiceAdapterCreator,
     })
 
-    const session = new SessionEntity(voiceChannel)
+    const session = new SessionEntity(voiceChannel, connection)
+    this.sessions.set(voiceChannel.id, session)
 
     connection.receiver.speaking.on('start', async (userId) => {
       this.sessionService.recordUser(connection.receiver, userId, session)
@@ -94,7 +117,6 @@ export class RecorderService {
         voiceChannel.id,
         voiceChannel.members.size,
         interaction,
-        connection,
         session,
         oldState,
         newState,
@@ -108,7 +130,6 @@ export class RecorderService {
     channelId: string,
     memberCount: number,
     interaction: ChatInputCommandInteraction,
-    connection: VoiceConnection,
     session: SessionEntity,
     oldState: VoiceState,
     newState: VoiceState,
@@ -117,8 +138,6 @@ export class RecorderService {
       if (memberCount == 1) {
         // Everyone except the bot has left the channel
         await this.finalizeSession(interaction, session)
-        this.logger.debug('Leaving channel')
-        connection.destroy()
       }
     }
   }
@@ -139,5 +158,9 @@ export class RecorderService {
       this.logger.error(e)
       await interaction.editReply(`Error when generating tracks`)
     }
+    this.logger.debug('Leaving channel')
+    session.connection?.destroy?.()
+    session.connection = null
+    this.sessions.delete(session.channel.id)
   }
 }

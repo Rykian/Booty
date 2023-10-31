@@ -10,7 +10,6 @@ import {
 import { ClientService } from 'src/client/service'
 import { createMock } from '@golevelup/ts-jest'
 import { SessionEntity } from './session.entity'
-import { VoiceConnection } from '@discordjs/voice'
 import fs from 'fs/promises'
 
 jest.mock('@discordjs/voice')
@@ -52,7 +51,6 @@ describe('Service', () => {
   describe('handleStateUpdate', () => {
     const interaction = createMock<ChatInputCommandInteraction>()
     const session = createMock<SessionEntity>()
-    const connection = createMock<VoiceConnection>()
     const oldState = createMock<VoiceState>()
     const newState = createMock<VoiceState>()
 
@@ -68,7 +66,6 @@ describe('Service', () => {
         '123',
         1,
         interaction,
-        connection,
         session,
         oldState,
         newState,
@@ -89,7 +86,6 @@ describe('Service', () => {
         '123',
         2,
         interaction,
-        connection,
         session,
         oldState,
         newState,

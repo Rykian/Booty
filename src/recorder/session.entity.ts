@@ -1,13 +1,16 @@
 import { VoiceChannel } from 'discord.js'
 import { RecordEntity } from './record.entity'
+import { VoiceConnection } from '@discordjs/voice'
 
 export class SessionEntity {
   start: Date = new Date()
   records: Map<string, RecordEntity[]> = new Map()
-  voiceChannel: VoiceChannel
+  channel: VoiceChannel
+  connection: VoiceConnection
 
-  constructor(voiceChannel: VoiceChannel) {
-    this.voiceChannel = voiceChannel
+  constructor(channel: VoiceChannel, connection: VoiceConnection) {
+    this.channel = channel
+    this.connection = connection
   }
 
   getUserRecords = (userId: string): RecordEntity[] => {

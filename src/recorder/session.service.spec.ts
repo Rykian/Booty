@@ -8,6 +8,7 @@ import { RecordEntity } from './record.entity'
 import { copyFile } from 'fs/promises'
 import tempfile from 'tempfile'
 import * as R from 'remeda'
+import { VoiceConnection } from '@discordjs/voice'
 
 describe(SessionService.name, () => {
   let service: SessionService
@@ -19,8 +20,7 @@ describe(SessionService.name, () => {
         SessionService,
         { provide: ClientService, useValue: createMock<ClientService>() },
       ],
-    })
-      .compile()
+    }).compile()
 
     service = moduleRef.get<SessionService>(SessionService)
     clientService = moduleRef.get<ClientService>(ClientService)
@@ -42,14 +42,16 @@ describe(SessionService.name, () => {
   describe('generateTracks', () => {
     it('returns 0 file paths', async () => {
       const channel = createMock<VoiceChannel>()
-      const entity = new SessionEntity(channel)
+      const connection = createMock<VoiceConnection>()
+      const entity = new SessionEntity(channel, connection)
 
       expect(await service.generateTracks(entity)).toHaveLength(0)
     })
 
     it('returns 3 file path if there is 3 user', async () => {
       const channel = createMock<VoiceChannel>({ id: '123', name: 'test' })
-      const entity = new SessionEntity(channel)
+      const connection = createMock<VoiceConnection>()
+      const entity = new SessionEntity(channel, connection)
       const globalUserNames = ['user1', 'user2', 'user3']
       await R.pipe(
         globalUserNames,
@@ -76,7 +78,8 @@ describe(SessionService.name, () => {
 
     it('filepaths contains name of the user', async () => {
       const channel = createMock<VoiceChannel>({ id: '123', name: 'test' })
-      const entity = new SessionEntity(channel)
+      const connection = createMock<VoiceConnection>()
+      const entity = new SessionEntity(channel, connection)
       const username = 'userName'
       const record = new RecordEntity()
       record.start = new Date()

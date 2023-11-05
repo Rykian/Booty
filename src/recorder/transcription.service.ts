@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { EnvService } from 'src/config/env.service'
 import { readFile } from 'fs/promises'
 import * as R from 'remeda'
+import { Cue, NodeCue, parseSync } from 'subtitle'
 
 export interface Segment {
   user: string
@@ -12,6 +13,7 @@ export interface Segment {
 @Injectable()
 export class RecorderTranscriptionService {
   private logger = new Logger(RecorderTranscriptionService.name)
+  private transcribeUrl = this.env.WHISPER_URL + 'asr?output=srt&language=fr'
 
   constructor(private env: EnvService) {}
 
@@ -38,24 +40,27 @@ export class RecorderTranscriptionService {
     formData.append('audio_file', new Blob([buffer]))
     const user = file.split('/').pop().split('.')[0]
     try {
-      const transcription = await fetch(
-        this.env.WHISPER_URL + 'asr?output=json&language=fr',
-        {
-          method: 'POST',
-          body: formData,
-        },
-      )
-      const result = await transcription.json()
+      const transcription = await fetch(this.transcribeUrl, {
+        method: 'POST',
+        body: formData,
+      }).then((res) => res.text())
 
-      return result.segments.map(
+      this.logger.debug('Transcription result:')
+      this.logger.debug(transcription)
+
+      const result = parseSync(transcription).filter(
+        (x) => x.type == 'cue',
+      ) as NodeCue[]
+
+      return result.map(
         (segment): Segment => ({
           user,
-          start: segment[2],
-          text: segment[4],
+          start: segment.data.start / 1000,
+          text: segment.data.text,
         }),
       )
     } catch (e) {
-      this.logger.error(this.env.WHISPER_URL + 'asr?language=fr')
+      this.logger.error(this.transcribeUrl)
       this.logger.error(e)
     }
   }

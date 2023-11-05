@@ -41,8 +41,8 @@ const validations = {
     desc: 'Lavalink password',
   }),
   WHISPER_URL: url({
-    devDefault: 'http://localhost:9000',
-    default: 'http://whisper:9000',
+    devDefault: 'http://localhost:9000/',
+    default: 'http://whisper:9000/',
     desc: 'URL of the whisper server with the trailing slash',
   }),
 }

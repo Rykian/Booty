@@ -1779,6 +1779,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/multipipe@npm:^3.0.0":
+  version: 3.0.3
+  resolution: "@types/multipipe@npm:3.0.3"
+  dependencies:
+    "@types/node": "*"
+  checksum: 5515c653107511a0ada943aaa2cd7eecb773f5bbb3d44ca38949b90f0d962e02420b2565073e1291b6708c556737cb553c3d07a01396179e76df9d8178c8fd8b
+  languageName: node
+  linkType: hard
+
 "@types/node@npm:*":
   version: 18.11.15
   resolution: "@types/node@npm:18.11.15"
@@ -2767,6 +2776,7 @@ __metadata:
     sequelize-typescript: ^2.1.5
     source-map-support: ^0.5.20
     sqlite3: ^5.1.6
+    subtitle: ^4.2.1
     supertest: ^6.1.3
     tempfile: v3.0.0
     ts-jest: 29.1.1
@@ -3635,6 +3645,15 @@ __metadata:
   version: 1.0.1
   resolution: "duplex-child-process@npm:1.0.1"
   checksum: a290d58dee2e641caecd569df527efef8f1c408964244e901f0317e3597db831a0285450d085fdb0c62e69dde9ab5c6a1564e5c9bd34400757b8cf66d3d29d2b
+  languageName: node
+  linkType: hard
+
+"duplexer2@npm:^0.1.2":
+  version: 0.1.4
+  resolution: "duplexer2@npm:0.1.4"
+  dependencies:
+    readable-stream: ^2.0.2
+  checksum: 744961f03c7f54313f90555ac20284a3fb7bf22fdff6538f041a86c22499560eb6eac9d30ab5768054137cb40e6b18b40f621094e0261d7d8c35a37b7a5ad241
   languageName: node
   linkType: hard
 
@@ -6337,6 +6356,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"multipipe@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "multipipe@npm:4.0.0"
+  dependencies:
+    duplexer2: ^0.1.2
+    object-assign: ^4.1.0
+  checksum: 5a494ec2ce5bfdb389882ca595e3c4a33cae6c90dad879db2e3aa9a94484d8b164b0fb7b58ccf7593ae7e8c6213fd3f53a736b2c98e4f14c5ed1d38debc33f98
+  languageName: node
+  linkType: hard
+
 "mute-stream@npm:0.0.8":
   version: 0.0.8
   resolution: "mute-stream@npm:0.0.8"
@@ -6550,7 +6579,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"object-assign@npm:^4, object-assign@npm:^4.1.1":
+"object-assign@npm:^4, object-assign@npm:^4.1.0, object-assign@npm:^4.1.1":
   version: 4.1.1
   resolution: "object-assign@npm:4.1.1"
   checksum: fcc6e4ea8c7fe48abfbb552578b1c53e0d194086e2e6bbbf59e0a536381a292f39943c6e9628af05b5528aa5e3318bb30d6b2e53cadaf5b8fe9e12c4b69af23f
@@ -7061,6 +7090,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"readable-stream@npm:^2.0.2":
+  version: 2.3.8
+  resolution: "readable-stream@npm:2.3.8"
+  dependencies:
+    core-util-is: ~1.0.0
+    inherits: ~2.0.3
+    isarray: ~1.0.0
+    process-nextick-args: ~2.0.0
+    safe-buffer: ~5.1.1
+    string_decoder: ~1.1.1
+    util-deprecate: ~1.0.1
+  checksum: 65645467038704f0c8aaf026a72fbb588a9e2ef7a75cd57a01702ee9db1c4a1e4b03aaad36861a6a0926546a74d174149c8c207527963e0c2d3eee2f37678a42
+  languageName: node
+  linkType: hard
+
 "readable-stream@npm:^2.2.2":
   version: 2.3.7
   resolution: "readable-stream@npm:2.3.7"
@@ -7076,7 +7120,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"readable-stream@npm:^3.0.2":
+"readable-stream@npm:^3.0.0, readable-stream@npm:^3.0.2":
   version: 3.6.2
   resolution: "readable-stream@npm:3.6.2"
   dependencies:
@@ -7670,6 +7714,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"split2@npm:^3.2.2":
+  version: 3.2.2
+  resolution: "split2@npm:3.2.2"
+  dependencies:
+    readable-stream: ^3.0.0
+  checksum: 8127ddbedd0faf31f232c0e9192fede469913aa8982aa380752e0463b2e31c2359ef6962eb2d24c125bac59eeec76873678d723b1c7ff696216a1cd071e3994a
+  languageName: node
+  linkType: hard
+
 "sprintf-js@npm:~1.0.2":
   version: 1.0.3
   resolution: "sprintf-js@npm:1.0.3"
@@ -7838,6 +7891,18 @@ __metadata:
   version: 3.1.1
   resolution: "strip-json-comments@npm:3.1.1"
   checksum: 492f73e27268f9b1c122733f28ecb0e7e8d8a531a6662efbd08e22cccb3f9475e90a1b82cab06a392f6afae6d2de636f977e231296400d0ec5304ba70f166443
+  languageName: node
+  linkType: hard
+
+"subtitle@npm:^4.2.1":
+  version: 4.2.1
+  resolution: "subtitle@npm:4.2.1"
+  dependencies:
+    "@types/multipipe": ^3.0.0
+    multipipe: ^4.0.0
+    split2: ^3.2.2
+    strip-bom: ^4.0.0
+  checksum: 0aa6ff70bd039345e9cd810d547f0536dccf12092a1fbda0c34060a875a0793de97de9e54af8855877247677b345a9b8f62b1671289c52402cd170c449ba363b
   languageName: node
   linkType: hard
 

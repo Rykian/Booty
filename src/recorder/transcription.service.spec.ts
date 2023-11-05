@@ -54,14 +54,17 @@ describe('RecorderTranscriptionService', () => {
 
   describe('transcribeRecord', () => {
     it('returns a list of segments', async () => {
-      const segments = [
-        [0, 0, 0, 0, 'hello'],
-        [0, 0, 1, 0, 'world'],
-      ]
+      const response = `1
+00:00:00,000 --> 00:00:01,000
+hello
+
+2
+00:00:01,000 --> 00:00:02,000
+world`
       jest.spyOn(fs, 'readFile').mockResolvedValueOnce(Buffer.from(''))
       jest.spyOn(global, 'fetch').mockResolvedValue(
         createMock<Response>({
-          json: () => Promise.resolve({ segments }),
+          text: () => Promise.resolve(response),
         }),
       )
 

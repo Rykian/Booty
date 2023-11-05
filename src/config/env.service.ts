@@ -1,18 +1,45 @@
 import { Injectable } from '@nestjs/common'
 import * as dotenv from 'dotenv'
-import { cleanEnv, num, str, ValidatorSpec } from 'envalid'
+import { cleanEnv, host, num, port, str, url, ValidatorSpec } from 'envalid'
 
 const DEFAULT_ENV = 'development'
 
+if (typeof process.env.NODE_ENV == 'undefined') {
+  process.env.NODE_ENV = DEFAULT_ENV
+}
+
 const validations = {
-  NODE_ENV: str({ default: DEFAULT_ENV }),
-  DISCORD_TOKEN: str(),
-  DISCORD_CLIENT_ID: str(),
-  MUSIC_DEFAULT_VOLUME: num({ default: 3 }),
-  REDIS_URL: str({ default: 'redis://localhost/' }),
-  LAVALINK_HOST: str({ default: 'localhost' }),
-  LAVALINK_PORT: num({ default: 2333 }),
-  LAVALINK_PASSWORD: str({ default: 'youshallnotpass' }),
+  NODE_ENV: str({
+    default: DEFAULT_ENV,
+    choices: ['development', 'production', 'test'],
+  }),
+  DISCORD_TOKEN: str({ desc: 'Discord bot token' }),
+  DISCORD_CLIENT_ID: str({ desc: 'Discord client ID' }),
+  MUSIC_DEFAULT_VOLUME: num({
+    default: 3,
+    example: '3',
+    desc: 'Default volume (0 to 10)',
+  }),
+  REDIS_URL: url({
+    devDefault: 'redis://localhost/',
+    default: 'redis://redis/',
+    example: 'redis://localhost/',
+  }),
+  LAVALINK_HOST: host({
+    devDefault: 'localhost',
+    default: 'lavalink',
+    example: 'localhost',
+    desc: 'Lavalink host',
+  }),
+  LAVALINK_PORT: port({
+    default: 2333,
+    example: '2333',
+    desc: 'Lavalink port',
+  }),
+  LAVALINK_PASSWORD: str({
+    default: 'youshallnotpass',
+    desc: 'Lavalink password',
+  }),
 }
 
 type Validations = typeof validations
@@ -31,7 +58,7 @@ const FILES = [
 
 @Injectable()
 export class EnvService implements Variables {
-  NODE_ENV: string
+  NODE_ENV: 'development' | 'production' | 'test'
   DISCORD_TOKEN: string
   DISCORD_CLIENT_ID: string
   MUSIC_DEFAULT_VOLUME: number

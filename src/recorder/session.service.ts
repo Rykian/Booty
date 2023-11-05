@@ -67,7 +67,11 @@ export class SessionService {
     )} -filter_complex "${filterComplex}" -map "[aout]" ${filename}`
 
     this.logger.debug(`Command: ${command}`)
-    execSync(command)
+    try {
+      execSync(command, { stdio: 'pipe' })
+    } catch (e) {
+      this.logger.error(e)
+    }
     this.logger.log('Finished writing to', filename)
 
     this.logger.debug('Removing original files...')

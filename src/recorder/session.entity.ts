@@ -7,6 +7,7 @@ export class SessionEntity {
   records: Map<string, RecordEntity[]> = new Map()
   channel: VoiceChannel
   connection: VoiceConnection
+  transcription: boolean = false
 
   constructor(channel: VoiceChannel, connection: VoiceConnection) {
     this.channel = channel

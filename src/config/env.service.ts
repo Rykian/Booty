@@ -40,6 +40,8 @@ const validations = {
     default: 'youshallnotpass',
     desc: 'Lavalink password',
   }),
+  WHISPER_HOST: str({ default: 'localhost' }),
+  WHISPER_PORT: str({ default: '9000' }),
 }
 
 type Validations = typeof validations
@@ -66,6 +68,8 @@ export class EnvService implements Variables {
   LAVALINK_HOST: string
   LAVALINK_PORT: number
   LAVALINK_PASSWORD: string
+  WHISPER_HOST: string
+  WHISPER_PORT: string
 
   constructor() {
     this.read()

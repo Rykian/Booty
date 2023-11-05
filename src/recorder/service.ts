@@ -14,7 +14,9 @@ import { ClientService } from 'src/client/service'
 import { Discordable } from 'src/discordable.util'
 import { SessionEntity } from './session.entity'
 import { SessionService } from './session.service'
-import { unlink } from 'fs/promises'
+import { unlink, writeFile } from 'fs/promises'
+import { RecorderTranscriptionService } from './transcription.service'
+import { dirname } from 'path'
 
 @Injectable()
 @Discordable({
@@ -37,7 +39,18 @@ import { unlink } from 'fs/promises'
       .addSubcommand((c) =>
         c
           .setName('start')
-          .setDescription("Record conversation if you're on a voice channel"),
+          .setDescription("Record conversation if you're on a voice channel")
+          .addStringOption((o) =>
+            o
+              .setName('transcription')
+              .setDescription(
+                'Generate a text file with a transcription of the session',
+              )
+              .setChoices(
+                { name: 'Yes', value: 'yes' },
+                { name: 'No', value: 'no' },
+              ),
+          ),
       )
       .addSubcommand((c) =>
         c.setName('stop').setDescription('Stop current recording session'),
@@ -51,6 +64,7 @@ export class RecorderService {
   constructor(
     private client: ClientService,
     private sessionService: SessionService,
+    private transcriptionService: RecorderTranscriptionService,
   ) {
     this.logger.log('Initialize recording service')
     client.on(Events.InteractionCreate, async (interaction) => {
@@ -76,7 +90,11 @@ export class RecorderService {
       }
       switch (subCommand) {
         case 'start':
-          await this.startRecording(interaction, channel)
+          await this.startRecording(
+            interaction,
+            channel,
+            interaction.options.getString('transcription') == 'yes',
+          )
           break
         case 'stop': {
           const session = this.sessions.get(channel.id)
@@ -93,6 +111,7 @@ export class RecorderService {
   async startRecording(
     interaction: ChatInputCommandInteraction,
     voiceChannel: NonThreadGuildBasedChannel,
+    transcribe?: boolean,
   ) {
     if (voiceChannel.type != ChannelType.GuildVoice)
       throw new Error('Channel is not a voice channel')
@@ -106,8 +125,8 @@ export class RecorderService {
     })
 
     const session = new SessionEntity(voiceChannel, connection)
+    session.transcription = transcribe
     this.sessions.set(voiceChannel.id, session)
-
     connection.receiver.speaking.on('start', async (userId) => {
       this.sessionService.recordUser(connection.receiver, userId, session)
     })
@@ -148,6 +167,14 @@ export class RecorderService {
   ) {
     try {
       const files = await this.sessionService.generateTracks(session)
+
+      if (session.transcription) {
+        const transcription = await this.transcriptionService.transcribe(files)
+        const transcriptionFile = `${dirname(files[0])}/transcription.txt`
+        await writeFile(transcriptionFile, transcription)
+        files.push(transcriptionFile)
+      }
+
       await interaction.editReply({ content: 'Record finished', files })
       this.logger.debug('Cleanup track files')
       const deletions = files.map((file) => unlink(file))
@@ -156,6 +183,7 @@ export class RecorderService {
     } catch (e) {
       this.logger.error(`Error when generating tracks`)
       this.logger.error(e)
+      console.error(e)
       await interaction.editReply(`Error when generating tracks`)
     }
     this.logger.debug('Leaving channel')

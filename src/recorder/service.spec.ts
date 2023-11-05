@@ -11,12 +11,14 @@ import { ClientService } from 'src/client/service'
 import { createMock } from '@golevelup/ts-jest'
 import { SessionEntity } from './session.entity'
 import fs from 'fs/promises'
+import { RecorderTranscriptionService } from './transcription.service'
 
 jest.mock('@discordjs/voice')
 
 describe('Service', () => {
   let recorderService: RecorderService
   let sessionService: SessionService
+  let transcriptionService: RecorderTranscriptionService
   let mockInteraction: ChatInputCommandInteraction
   let mockVoiceChannel: NonThreadGuildBasedChannel
 
@@ -26,11 +28,18 @@ describe('Service', () => {
         RecorderService,
         { provide: SessionService, useValue: createMock<SessionService>() },
         { provide: ClientService, useValue: createMock<ClientService>() },
+        {
+          provide: RecorderTranscriptionService,
+          useValue: createMock<RecorderTranscriptionService>(),
+        },
       ],
     }).compile()
 
     recorderService = module.get<RecorderService>(RecorderService)
     sessionService = module.get<SessionService>(SessionService)
+    transcriptionService = module.get<RecorderTranscriptionService>(
+      RecorderTranscriptionService,
+    )
   })
 
   afterEach(() => {
@@ -96,26 +105,35 @@ describe('Service', () => {
   })
 
   describe('finalizeSession', () => {
-    const interaction = createMock<ChatInputCommandInteraction>()
-    const session = createMock<SessionEntity>()
-    jest.spyOn(fs, 'unlink').mockImplementation()
+    let interaction: ChatInputCommandInteraction
+    let session: SessionEntity
+
+    const files = ['/tmp/file1', '/tmp/file2']
+    let mockedGenerateTracks: jest.SpyInstance<
+      Promise<string[]>,
+      [session: SessionEntity],
+      any
+    >
+
+    beforeEach(() => {
+      interaction = createMock<ChatInputCommandInteraction>()
+      session = createMock<SessionEntity>()
+      session.transcription = false
+
+      jest.spyOn(fs, 'unlink').mockImplementation()
+      mockedGenerateTracks = jest
+        .spyOn(sessionService, 'generateTracks')
+        .mockImplementation(() => Promise.resolve(files))
+    })
+    afterEach(jest.clearAllMocks)
 
     it('should call sessionService.generateTracks', async () => {
-      const mockedGenerateTracks = jest
-        .spyOn(sessionService, 'generateTracks')
-        .mockImplementation(() => Promise.resolve(['file1', 'file2']))
-
       await recorderService.finalizeSession(interaction, session)
 
       expect(mockedGenerateTracks).toBeCalledTimes(1)
     })
 
     it('should send files in response to interaction', async () => {
-      const files = ['file1', 'file2']
-      jest
-        .spyOn(sessionService, 'generateTracks')
-        .mockImplementation(() => Promise.resolve(files))
-
       await recorderService.finalizeSession(interaction, session)
 
       expect(interaction.editReply).toBeCalledTimes(1)
@@ -126,16 +144,21 @@ describe('Service', () => {
     })
 
     it('should delete generated files', async () => {
-      const files = ['file1', 'file2']
-      jest
-        .spyOn(sessionService, 'generateTracks')
-        .mockImplementation(() => Promise.resolve(files))
-
       await recorderService.finalizeSession(interaction, session)
 
       expect(fs.unlink).toBeCalledTimes(2)
-      expect(fs.unlink).toHaveBeenNthCalledWith(1, 'file1')
-      expect(fs.unlink).toHaveBeenNthCalledWith(2, 'file2')
+      expect(fs.unlink).toHaveBeenNthCalledWith(1, '/tmp/file1')
+      expect(fs.unlink).toHaveBeenNthCalledWith(2, '/tmp/file2')
+    })
+
+    it('should call transcriptionService.transcribe if transcription is enabled', async () => {
+      session.transcription = true
+
+      const mockedTranscribe = jest
+        .spyOn(transcriptionService, 'transcribe')
+        .mockImplementation(() => Promise.resolve('transcription example'))
+      await recorderService.finalizeSession(interaction, session)
+      expect(mockedTranscribe).toBeCalledTimes(1)
     })
   })
 })

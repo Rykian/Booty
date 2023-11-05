@@ -14,7 +14,6 @@ import { ClientService } from 'src/client/service'
 import { Discordable } from 'src/discordable.util'
 import { SessionEntity } from './session.entity'
 import { SessionService } from './session.service'
-import { unlink } from 'fs/promises'
 
 @Injectable()
 @Discordable({
@@ -172,10 +171,7 @@ export class RecorderService {
       }
 
       await interaction.editReply({ content: 'Record finished', files })
-      this.logger.debug('Cleanup track files')
-      const deletions = files.map((file) => unlink(file))
-      await Promise.all(deletions)
-      this.logger.debug('Track files removed')
+      this.sessionService.cleanSessionDir(session)
     } catch (e) {
       this.logger.error(`Error when generating tracks`)
       this.logger.error(e)

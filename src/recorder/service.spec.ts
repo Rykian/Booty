@@ -10,7 +10,6 @@ import {
 import { ClientService } from 'src/client/service'
 import { createMock } from '@golevelup/ts-jest'
 import { SessionEntity } from './session.entity'
-import fs from 'fs/promises'
 
 jest.mock('@discordjs/voice')
 
@@ -111,7 +110,6 @@ describe('Service', () => {
       session = createMock<SessionEntity>()
       session.transcription = false
 
-      jest.spyOn(fs, 'unlink').mockImplementation()
       mockedGenerateTracks = jest
         .spyOn(sessionService, 'generateTracks')
         .mockImplementation(() => Promise.resolve(files))
@@ -136,10 +134,10 @@ describe('Service', () => {
 
     it('should delete generated files', async () => {
       await recorderService.finalizeSession(interaction, session)
-
-      expect(fs.unlink).toBeCalledTimes(2)
-      expect(fs.unlink).toHaveBeenNthCalledWith(1, '/tmp/file1')
-      expect(fs.unlink).toHaveBeenNthCalledWith(2, '/tmp/file2')
+      const mockedCleanSessionDir = jest
+        .spyOn(sessionService, 'cleanSessionDir')
+        .mockImplementation()
+      expect(mockedCleanSessionDir).toBeCalledTimes(1)
     })
 
     it('should call transcriptionService.transcribe if transcription is enabled', async () => {

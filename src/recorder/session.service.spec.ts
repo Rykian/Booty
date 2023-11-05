@@ -10,6 +10,7 @@ import tempfile from 'tempfile'
 import * as R from 'remeda'
 import { VoiceConnection } from '@discordjs/voice'
 import { RecorderTranscriptionService } from './transcription.service'
+import * as rimraf from 'rimraf'
 
 describe(SessionService.name, () => {
   let service: SessionService
@@ -105,6 +106,23 @@ describe(SessionService.name, () => {
 
       expect(filepaths).toHaveLength(1)
       expect(filepaths[0]).toContain(`${username}.ogg`)
+    })
+  })
+
+  describe('cleanSessionDir', () => {
+    it('call rimraf', async () => {
+      const session = createMock<SessionEntity>({
+        start: new Date(),
+        channel: {
+          id: '123',
+          name: 'blabla',
+        },
+      })
+      const mockedRimraf = jest.spyOn(rimraf, 'rimraf').mockImplementation()
+
+      await service.cleanSessionDir(session)
+
+      expect(mockedRimraf).toBeCalledTimes(1)
     })
   })
 })

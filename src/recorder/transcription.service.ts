@@ -14,7 +14,6 @@ export class RecorderTranscriptionService {
   private logger = new Logger(RecorderTranscriptionService.name)
 
   constructor(private env: EnvService) {}
-  whisperURL = `http://${this.env.WHISPER_HOST}:${this.env.WHISPER_PORT}/`
 
   async transcribe(files: string[]) {
     this.logger.log(`Transcribing ${files.length} files`)
@@ -40,7 +39,7 @@ export class RecorderTranscriptionService {
     const user = file.split('/').pop().split('.')[0]
     try {
       const transcription = await fetch(
-        this.whisperURL + 'asr?output=json&language=fr',
+        this.env.WHISPER_URL + 'asr?output=json&language=fr',
         {
           method: 'POST',
           body: formData,
@@ -56,7 +55,7 @@ export class RecorderTranscriptionService {
         }),
       )
     } catch (e) {
-      this.logger.error(this.whisperURL + '/asr?language=fr')
+      this.logger.error(this.env.WHISPER_URL + 'asr?language=fr')
       this.logger.error(e)
     }
   }

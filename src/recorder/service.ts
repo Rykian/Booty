@@ -14,9 +14,7 @@ import { ClientService } from 'src/client/service'
 import { Discordable } from 'src/discordable.util'
 import { SessionEntity } from './session.entity'
 import { SessionService } from './session.service'
-import { unlink, writeFile } from 'fs/promises'
-import { RecorderTranscriptionService } from './transcription.service'
-import { dirname } from 'path'
+import { unlink } from 'fs/promises'
 
 @Injectable()
 @Discordable({
@@ -64,7 +62,6 @@ export class RecorderService {
   constructor(
     private client: ClientService,
     private sessionService: SessionService,
-    private transcriptionService: RecorderTranscriptionService,
   ) {
     this.logger.log('Initialize recording service')
     client.on(Events.InteractionCreate, async (interaction) => {
@@ -169,10 +166,9 @@ export class RecorderService {
       const files = await this.sessionService.generateTracks(session)
 
       if (session.transcription) {
-        const transcription = await this.transcriptionService.transcribe(files)
-        const transcriptionFile = `${dirname(files[0])}/transcription.txt`
-        await writeFile(transcriptionFile, transcription)
-        files.push(transcriptionFile)
+        const transcription =
+          await this.sessionService.generateTranscription(session)
+        files.push(transcription)
       }
 
       await interaction.editReply({ content: 'Record finished', files })

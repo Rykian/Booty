@@ -2,10 +2,12 @@ import { Injectable, Logger } from '@nestjs/common'
 import { EnvService } from 'src/config/env.service'
 import { readFile } from 'fs/promises'
 import * as R from 'remeda'
-import { Cue, NodeCue, parseSync } from 'subtitle'
+import { NodeCue, parseSync } from 'subtitle'
+import { SessionEntity } from './session.entity'
+import { User } from 'discord.js'
 
 export interface Segment {
-  user: string
+  user: User
   start: number
   text: string
 }
@@ -17,28 +19,35 @@ export class RecorderTranscriptionService {
 
   constructor(private env: EnvService) {}
 
-  async transcribe(files: string[]) {
-    this.logger.log(`Transcribing ${files.length} files`)
+  async transcribe(session: SessionEntity) {
+    if (!session.languageCode) {
+      this.logger.debug('Language not specified, detecting...')
+      session.languageCode = await this.detectLanguage(
+        session.tracks.values().next().value,
+      )
+      this.logger.debug(`Language detected: ${session.languageCode}`)
+    }
     const transcriptions = await R.pipe(
-      files,
-      R.map(this.transcribeRecord),
+      session.tracks,
+      (x) => Array.from(x),
+      R.map(([user, file]) => this.transcribeRecord(user, file)),
       (x) => Promise.all(x),
     )
     return R.pipe(
       transcriptions,
       R.flatten(),
       R.sortBy((x) => x.start),
-      R.map((x) => `${x.user} — ${x.text}`),
+      R.map((x) => `${x.user.displayName} — ${x.text.trim()}`),
       R.join('\n\n'),
     )
   }
 
-  transcribeRecord = async (file: string): Promise<Segment[]> => {
-    this.logger.debug(`Transcribing ${file}`)
+  transcribeRecord = async (user: User, file: string): Promise<Segment[]> => {
+    this.logger.debug(`Transcribing record of ${user.displayName}`)
     const buffer = await readFile(file)
     const formData = new FormData()
     formData.append('audio_file', new Blob([buffer]))
-    const user = file.split('/').pop().split('.')[0]
+
     try {
       const transcription = await fetch(this.transcribeUrl, {
         method: 'POST',
@@ -63,5 +72,19 @@ export class RecorderTranscriptionService {
       this.logger.error(this.transcribeUrl)
       this.logger.error(e)
     }
+  }
+
+  detectLanguage = async (file: string) => {
+    const buffer = await readFile(file)
+    const formData = new FormData()
+    formData.append('audio_file', new Blob([buffer]))
+    const request = await fetch(this.env.WHISPER_URL + 'detect-language', {
+      method: 'POST',
+      body: formData,
+    })
+
+    const json = await request.json()
+
+    return json.language_code
   }
 }

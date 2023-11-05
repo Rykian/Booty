@@ -9,6 +9,7 @@ import { copyFile } from 'fs/promises'
 import tempfile from 'tempfile'
 import * as R from 'remeda'
 import { VoiceConnection } from '@discordjs/voice'
+import { RecorderTranscriptionService } from './transcription.service'
 
 describe(SessionService.name, () => {
   let service: SessionService
@@ -19,6 +20,10 @@ describe(SessionService.name, () => {
       providers: [
         SessionService,
         { provide: ClientService, useValue: createMock<ClientService>() },
+        {
+          provide: RecorderTranscriptionService,
+          useValue: createMock<RecorderTranscriptionService>(),
+        },
       ],
     }).compile()
 

@@ -11,14 +11,12 @@ import { ClientService } from 'src/client/service'
 import { createMock } from '@golevelup/ts-jest'
 import { SessionEntity } from './session.entity'
 import fs from 'fs/promises'
-import { RecorderTranscriptionService } from './transcription.service'
 
 jest.mock('@discordjs/voice')
 
 describe('Service', () => {
   let recorderService: RecorderService
   let sessionService: SessionService
-  let transcriptionService: RecorderTranscriptionService
   let mockInteraction: ChatInputCommandInteraction
   let mockVoiceChannel: NonThreadGuildBasedChannel
 
@@ -28,18 +26,11 @@ describe('Service', () => {
         RecorderService,
         { provide: SessionService, useValue: createMock<SessionService>() },
         { provide: ClientService, useValue: createMock<ClientService>() },
-        {
-          provide: RecorderTranscriptionService,
-          useValue: createMock<RecorderTranscriptionService>(),
-        },
       ],
     }).compile()
 
     recorderService = module.get<RecorderService>(RecorderService)
     sessionService = module.get<SessionService>(SessionService)
-    transcriptionService = module.get<RecorderTranscriptionService>(
-      RecorderTranscriptionService,
-    )
   })
 
   afterEach(() => {
@@ -155,7 +146,7 @@ describe('Service', () => {
       session.transcription = true
 
       const mockedTranscribe = jest
-        .spyOn(transcriptionService, 'transcribe')
+        .spyOn(sessionService, 'generateTranscription')
         .mockImplementation(() => Promise.resolve('transcription example'))
       await recorderService.finalizeSession(interaction, session)
       expect(mockedTranscribe).toBeCalledTimes(1)

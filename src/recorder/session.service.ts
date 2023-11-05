@@ -7,15 +7,20 @@ import * as prism from 'prism-media'
 import { pipeline } from 'stream'
 import tempfile from 'tempfile'
 import { ClientService } from 'src/client/service'
-import { mkdir, unlink } from 'fs/promises'
+import { mkdir, unlink, writeFile } from 'fs/promises'
 import { cwd } from 'process'
 import { execSync } from 'child_process'
 import ffmpegPath from 'ffmpeg-static'
+import { RecorderTranscriptionService } from './transcription.service'
+import { rimraf } from 'rimraf'
 
 @Injectable()
 export class SessionService {
   private logger = new Logger(SessionService.name)
-  constructor(private client: ClientService) {}
+  constructor(
+    private client: ClientService,
+    private transcriptionService: RecorderTranscriptionService,
+  ) {}
 
   /** Generate tracks for each users */
   async generateTracks(session: SessionEntity) {
@@ -31,9 +36,7 @@ export class SessionService {
   private async generateUserTrack(session: SessionEntity, userId: string) {
     const user = await this.client.users.fetch(userId)
     this.logger.log(`Generating track for ${user.globalName}`)
-    const directory = `${cwd()}/tmp/${session.channel.id}-${
-      session.channel.name
-    }/${this.date(session.start)}`
+    const directory = this.sessionDirectory(session)
     await mkdir(directory, { recursive: true })
     const filename = `${directory}/${user.globalName}.ogg`
     const instructions: string[] = []
@@ -78,7 +81,23 @@ export class SessionService {
     const deletions = records.map((record) => unlink(record.file))
     await Promise.all(deletions)
     this.logger.debug('Files removed')
+    session.tracks.set(user, filename)
     return filename
+  }
+
+  async generateTranscription(session: SessionEntity) {
+    const transcription = await this.transcriptionService.transcribe(session)
+    const transcriptionFile = `${this.sessionDirectory(
+      session,
+    )}/transcription.txt`
+    await writeFile(transcriptionFile, transcription)
+    return transcriptionFile
+  }
+
+  async cleanSessionDir(session: SessionEntity) {
+    const directory = this.sessionDirectory(session)
+    this.logger.debug(`Removing directory ${directory}`)
+    await rimraf(directory)
   }
 
   /**
@@ -130,4 +149,9 @@ export class SessionService {
 
   private generateSilenceCommand = (duration: number) =>
     `-f lavfi -t ${duration} -i anullsrc=r=48000:cl=stereo`
+
+  private sessionDirectory = (session: SessionEntity) =>
+    `${cwd()}/tmp/${session.channel.id}-${session.channel.name}/${this.date(
+      session.start,
+    )}`
 }

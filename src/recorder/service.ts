@@ -175,7 +175,6 @@ export class RecorderService {
     } catch (e) {
       this.logger.error(`Error when generating tracks`)
       this.logger.error(e)
-      console.error(e)
       await interaction.editReply(`Error when generating tracks`)
     }
     this.logger.debug('Leaving channel')

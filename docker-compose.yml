@@ -17,3 +17,11 @@ services:
     image: redis/redis-stack-server:latest
     ports:
       - 6379:6379
+
+  wisper:
+    image: onerahmet/openai-whisper-asr-webservice:latest
+    environment:
+      ASR_ENGINE: faster_whisper
+      ASR_MODEL: medium
+    ports:
+      - 9000:9000

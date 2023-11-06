@@ -43,6 +43,7 @@
     "sequelize": "^6.33.0",
     "sequelize-typescript": "^2.1.5",
     "sqlite3": "^5.1.6",
+    "subtitle": "^4.2.1",
     "tempfile": "v3.0.0",
     "vulkava": "^1.6.2"
   },

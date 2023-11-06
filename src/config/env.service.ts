@@ -40,6 +40,11 @@ const validations = {
     default: 'youshallnotpass',
     desc: 'Lavalink password',
   }),
+  WHISPER_URL: url({
+    devDefault: 'http://localhost:9000/',
+    default: 'http://whisper:9000/',
+    desc: 'URL of the whisper server with the trailing slash',
+  }),
 }
 
 type Validations = typeof validations
@@ -66,6 +71,7 @@ export class EnvService implements Variables {
   LAVALINK_HOST: string
   LAVALINK_PORT: number
   LAVALINK_PASSWORD: string
+  WHISPER_URL: string
 
   constructor() {
     this.read()

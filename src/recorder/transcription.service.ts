@@ -15,7 +15,8 @@ export interface Segment {
 @Injectable()
 export class RecorderTranscriptionService {
   private logger = new Logger(RecorderTranscriptionService.name)
-  private transcribeUrl = this.env.WHISPER_URL + 'asr?output=srt&language=fr'
+  private transcribeUrl = (languageCode: string) =>
+    this.env.WHISPER_URL + `asr?output=srt&language=${languageCode}`
 
   constructor(private env: EnvService) {}
 
@@ -30,7 +31,7 @@ export class RecorderTranscriptionService {
     const transcriptions = await R.pipe(
       session.tracks,
       (x) => Array.from(x),
-      R.map(([user, file]) => this.transcribeRecord(user, file)),
+      R.map(([user, file]) => this.transcribeRecord(user, file, session)),
       (x) => Promise.all(x),
     )
     return R.pipe(
@@ -42,17 +43,24 @@ export class RecorderTranscriptionService {
     )
   }
 
-  transcribeRecord = async (user: User, file: string): Promise<Segment[]> => {
+  transcribeRecord = async (
+    user: User,
+    file: string,
+    session: SessionEntity,
+  ): Promise<Segment[]> => {
     this.logger.debug(`Transcribing record of ${user.displayName}`)
     const buffer = await readFile(file)
     const formData = new FormData()
     formData.append('audio_file', new Blob([buffer]))
 
     try {
-      const transcription = await fetch(this.transcribeUrl, {
-        method: 'POST',
-        body: formData,
-      }).then((res) => res.text())
+      const transcription = await fetch(
+        this.transcribeUrl(session.languageCode),
+        {
+          method: 'POST',
+          body: formData,
+        },
+      ).then((res) => res.text())
 
       this.logger.debug('Transcription result:')
       this.logger.debug(transcription)
@@ -69,7 +77,7 @@ export class RecorderTranscriptionService {
         }),
       )
     } catch (e) {
-      this.logger.error(this.transcribeUrl)
+      this.logger.error(this.transcribeUrl(session.languageCode))
       this.logger.error(e)
     }
   }

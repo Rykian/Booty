@@ -82,16 +82,21 @@ hello
 00:00:01,000 --> 00:00:02,000
 world`
       jest.spyOn(fs, 'readFile').mockResolvedValueOnce(Buffer.from(''))
-      jest.spyOn(global, 'fetch').mockResolvedValue(
+      const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(
         createMock<Response>({
           text: () => Promise.resolve(response),
         }),
       )
+      const session = createMock<SessionEntity>({ languageCode: 'fr' })
 
-      expect(await service.transcribeRecord(user1, '/tmp/user1.ogg')).toEqual([
+      expect(
+        await service.transcribeRecord(user1, '/tmp/user1.ogg', session),
+      ).toEqual([
         { user: user1, start: 0, text: 'hello' },
         { user: user1, start: 1, text: 'world' },
       ])
+
+      expect(fetchSpy.mock.calls[0][0]).toContain('fr')
     })
   })
 })

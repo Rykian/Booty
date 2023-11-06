@@ -15,6 +15,12 @@ services:
     image: redis/redis-stack-server:latest
     container_name: redis
 
+  wisper:
+    image: onerahmet/openai-whisper-asr-webservice:latest
+    environment:
+      ASR_ENGINE: faster_whisper
+      ASR_MODEL: medium
+
   booty:
     image: registry.heavycookie.co/thibault.lacroux/booty:latest
     container_name: booty

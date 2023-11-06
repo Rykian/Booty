@@ -4,13 +4,11 @@ services:
     container_name: lavalink
     environment:
       # set Java options here
-      - _JAVA_OPTIONS=-Xmx6G
+      _JAVA_OPTIONS: -Xmx6G
       # set lavalink server port
-      - SERVER_PORT=2333
+      SERVER_PORT: 2333
       # set password for lavalink
-      - LAVALINK_SERVER_PASSWORD=youshallnotpass
-    volumes:
-      - ./lavalink.yaml:/opt/Lavalink/application.yml:ro
+      LAVALINK_SERVER_PASSWORD: youshallnotpass
 
   redis:
     image: redis/redis-stack-server:latest
@@ -22,13 +20,3 @@ services:
     environment:
       ASR_ENGINE: faster_whisper
       ASR_MODEL: medium
-
-  booty:
-    image: registry.heavycookie.co/thibault.lacroux/booty:latest
-    container_name: booty
-    environment:
-      REDIS_URL: redis://redis/
-      LAVALINK_HOST: lavalink
-      LAVALINK_PASSWORD: youshallnotpass
-    volumes:
-      - ./db.sqlite:/usr/src/app/db.sqlite

@@ -1,27 +1,23 @@
 services:
   lavalink:
-    image: ghcr.io/lavalink-devs/lavalink:3.7.8
-    container_name: lavalink
-    environment:
-      # set Java options here
-      - _JAVA_OPTIONS=-Xmx6G
-      # set lavalink server port
-      - SERVER_PORT=2333
-      # set password for lavalink
-      - LAVALINK_SERVER_PASSWORD=youshallnotpass
+    extends:
+      file: docker-compose.base.yml
+      service: lavalink
     ports:
       - 2333:2333
     volumes:
       - ./lavalink.yaml:/opt/Lavalink/application.yml:ro
+
   redis:
-    image: redis/redis-stack-server:latest
+    extends:
+      file: docker-compose.base.yml
+      service: redis
     ports:
       - 6379:6379
 
-  wisper:
-    image: onerahmet/openai-whisper-asr-webservice:latest
-    environment:
-      ASR_ENGINE: faster_whisper
-      ASR_MODEL: medium
+  whisper:
+    extends:
+      file: docker-compose.base.yml
+      service: whisper
     ports:
       - 9000:9000
